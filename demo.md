@@ -90,8 +90,32 @@ You step out into the busy street of Victorian London. Carriages rumble past, an
 ### Exits
 
 - Foyer
+- Trafalgar Square
 
 ### Dialogues
 
 Dr. Holmes: We need to follow these clues quickly before the culprit strikes again.
 Dr. Watson: Agreed. Let's head back to the study to analyze what we have.
+
+## Scene: Trafalgar Square
+
+### Description
+
+You find yourself in the bustling Trafalgar Square, surrounded by historic buildings and the iconic Nelson's Column. Pigeons flutter around, and tourists take photographs.
+
+### Items
+
+- Map
+- Souvenir
+
+### Characters
+
+Tourist: is taking a photo of Nelson's Column.
+
+### Exits
+
+- Street
+
+### Dialogues
+
+Tourist: This place is amazing! Have you seen the lions?

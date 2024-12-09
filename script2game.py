@@ -143,13 +143,13 @@ class Script2Game:
                 exit_name = command[6:].strip().lower()
                 matching_exits = [exit for exit in scene['content'].get('Exits', []) if exit.lower() == exit_name]
                 if matching_exits:
-                    self.current_scene = matching_exits[0]
+                    self.current_scene = matching_exits[0].lower()
                     self.play_scene(self.current_scene)
                     return
                 else:
                     print("Invalid exit. Try again.")
             elif any(command == exit.lower() for exit in scene['content'].get('Exits', [])):
-                self.current_scene = next(exit for exit in scene['content']['Exits'] if exit.lower() == command)
+                self.current_scene = next(exit.lower() for exit in scene['content']['Exits'] if exit.lower() == command)
                 self.play_scene(self.current_scene)
                 return
             elif command.startswith('talk to '):
@@ -261,7 +261,7 @@ class Script2Game:
     def handle_branching_dialogue(self, scene, speaker):
         if speaker == 'Sherlock Holmes' and 'ask him about an experiment' in scene['content']['Dialogues'][speaker].lower():
             print("Sherlock Holmes: I must go to the laboratory to continue my experiment. Follow me if you wish.")
-            self.current_scene = 'Laboratory'
+            self.current_scene = 'laboratory'
             self.play_scene(self.current_scene)
 
 if __name__ == "__main__":
