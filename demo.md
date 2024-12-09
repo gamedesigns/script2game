@@ -8,10 +8,12 @@ You find yourself in Sherlock Holmes' study, filled with books, papers, and myst
 
 - Pipe
 - Magnifying Glass
+#### Chemical Notes
 
 ### Characters
 
 Sherlock Holmes: is standing by the window, looking at the street outside.
+#### Chemical Notes
 Dr. Watson: is sitting in an armchair, reading a newspaper.
 
 ### Exits
@@ -24,6 +26,7 @@ Dr. Watson: is sitting in an armchair, reading a newspaper.
 Sherlock Holmes: Ah, you've finally arrived. I've been expecting you. There's a case that requires your attention.
 Dr. Watson: What is it this time, Holmes?
 Sherlock Holmes: A series of burglaries in the city. Nothing seems to be taken, but there are strange symbols left at each scene.
+Sherlock Holmes: If you ask him about an experiment, he will leave to the laboratory.
 
 ## Scene: Laboratory
 
