@@ -7,8 +7,9 @@ You find yourself in Sherlock Holmes' study, filled with books, papers, and myst
 ### Items
 
 - Pipe
+#### Tobacco
 - Magnifying Glass
-#### Chemical Notes
+
 
 ### Characters
 
@@ -44,7 +45,7 @@ Sherlock Holmes: is examining a slide under the microscope.
 
 ### Exits
 
-- Study
+- The Study
 
 ### Dialogues
 
@@ -69,7 +70,7 @@ Dr. Watson: is standing by the coat rack, looking at a hat.
 
 ### Exits
 
-- Study
+- The Study
 - Street
 
 ### Dialogues
