@@ -14,51 +14,53 @@ class Script2Game:
         for file in markdown_files:
             with open(file, 'r', encoding='utf-8') as f:
                 content = f.read()
-                scenes = re.split(r'## Scene: (.+?)\n', content)
-                for i in range(0, len(scenes)-1, 2):
-                    scene_name = scenes[i+1].strip()
-                    scene_content = scenes[i+2].strip()
+                pattern = r'## Scene: (.+?)\n(.*?)(?=\n## Scene: |$)'
+                scenes = re.findall(pattern, content, re.DOTALL)
+                for scene_name, scene_content in scenes:
+                    scene_name = scene_name.strip()
+                    scene_content = scene_content.strip()
                     self.scenes[scene_name] = self.parse_scene(scene_content)
 
     def parse_scene(self, content):
         parsed = {}
-        blocks = re.split(r'\n\n', content)
-        current_section = None
-        for block in blocks:
-            if block.startswith('### '):
-                current_section = block[4:].strip()
-                parsed[current_section] = []
-            elif block:
-                if current_section == 'Choices':
-                    choices = block.strip().split('\n')
-                    choice_dict = {}
-                    for choice in choices:
-                        choice_text, next_scene = choice.split(':')
-                        choice_dict[choice_text.strip()] = next_scene.strip()
-                    parsed[current_section] = choice_dict
-                elif current_section == 'Dialogues':
-                    dialogues = block.strip().split('\n')
-                    dialogue_dict = {}
-                    for dialogue in dialogues:
-                        speaker, text = dialogue.split(':', 1)
-                        dialogue_dict[speaker.strip()] = text.strip()
-                    parsed[current_section] = dialogue_dict
-                elif current_section == 'Characters':
-                    characters = block.strip().split('\n')
-                    character_dict = {}
-                    for character in characters:
-                        name, description = character.split(':', 1)
-                        character_dict[name.strip()] = description.strip()
-                    parsed[current_section] = character_dict
-                elif current_section == 'Exits':
-                    exits = [exit.lstrip('- ').strip() for exit in block.strip().split('\n')]
-                    parsed[current_section] = exits
-                elif current_section == 'Items':
-                    items = [item.strip() for item in block.strip().split('\n')]
-                    parsed[current_section] = items
-                else:
-                    parsed[current_section].append(block.strip())
+        pattern = r'### (.+?)\n(.*?)(?=\n### |$)'
+        sections = re.findall(pattern, content, re.DOTALL)
+        for header, body in sections:
+            header = header.strip()
+            body = body.strip()
+            if header == 'Dialogues':
+                parsed[header] = self.parse_dialogues(body)
+            else:
+                parsed[header] = self.parse_section_content(body)
         return parsed
+
+    def parse_section_content(self, content):
+        lines = content.strip().split('\n')
+        if lines[0].startswith('- '):
+            return [line.lstrip('- ').strip() for line in lines]
+        elif ':' in lines[0]:
+            return {line.split(':', 1)[0].strip(): line.split(':', 1)[1].strip() for line in lines}
+        else:
+            return lines
+
+    def parse_dialogues(self, content):
+        dialogues = {}
+        lines = content.strip().split('\n')
+        current_speaker = None
+        for line in lines:
+            if ':' in line:
+                parts = line.split(':', 1)
+                speaker = parts[0].strip()
+                text = parts[1].strip()
+                current_speaker = speaker
+                if speaker in dialogues:
+                    dialogues[speaker] += ' ' + text
+                else:
+                    dialogues[speaker] = text
+            else:
+                if current_speaker is not None:
+                    dialogues[current_speaker] += ' ' + line.strip()
+        return dialogues
 
     def display_text(self, text, pace=0.01):
         for char in text:
@@ -76,7 +78,8 @@ class Script2Game:
         print(f"__{scene_name}__\n")
 
         if 'Description' in scene:
-            self.display_text(scene['Description'][0])
+            for line in scene['Description']:
+                self.display_text(line)
 
         if 'Items' in scene:
             for item in scene['Items']:
@@ -95,15 +98,15 @@ class Script2Game:
             command = input("\nWhat do you want to do? ").strip().lower()
             if command.startswith('go to '):
                 exit_name = command[6:].strip().lower()
-                matching_exits = [exit for exit in scene['Exits'] if exit.lower() == exit_name]
+                matching_exits = [exit for exit in scene.get('Exits', []) if exit.lower() == exit_name]
                 if matching_exits:
                     self.current_scene = matching_exits[0]
                     self.play_scene(self.current_scene)
                     return
                 else:
                     print("Invalid exit. Try again.")
-            elif any(command == exit.lower() for exit in scene['Exits']):
-                self.current_scene = [exit for exit in scene['Exits'] if exit.lower() == command][0]
+            elif any(command == exit.lower() for exit in scene.get('Exits', [])):
+                self.current_scene = next(exit for exit in scene['Exits'] if exit.lower() == command)
                 self.play_scene(self.current_scene)
                 return
             elif command.startswith('talk to '):
@@ -116,27 +119,35 @@ class Script2Game:
                 else:
                     print("No one by that name here.")
             elif command.startswith('take '):
-                item = command[5:].strip()
-                if any(item.lower() == i.lower() for i in scene.get('Items', [])):
-                    self.inventory.append([i for i in scene['Items'] if i.lower() == item][0])
-                    scene['Items'].remove([i for i in scene['Items'] if i.lower() == item][0])
-                    print(f"You have picked up: {[i for i in self.inventory if i.lower() == item][0]}")
+                item = command[5:].strip().lower()
+                scene_items = [i.lower() for i in scene.get('Items', [])]
+                if item in scene_items:
+                    actual_item = scene['Items'][scene_items.index(item)]
+                    self.inventory.append(actual_item)
+                    scene['Items'].remove(actual_item)
+                    print(f"You have picked up: {actual_item}")
                 else:
                     print("No such item here.")
             elif command.startswith('look at '):
-                target = command[8:].strip()
-                if any(target == item.lower() for item in scene.get('Items', [])):
-                    print(f"You see: {[item for item in scene['Items'] if item.lower() == target][0]}")
-                elif any(target == character.lower() for character in scene.get('Characters', {})):
-                    for character, description in scene['Characters'].items():
-                        if character.lower() == target:
-                            print(f"{character} is in the room. {description}")
-                            break
+                target = command[8:].strip().lower()
+                # Check items
+                scene_items = [i.lower() for i in scene.get('Items', [])]
+                if target in scene_items:
+                    actual_item = next(i for i in scene['Items'] if i.lower() == target)
+                    print(f"You see: {actual_item}")
+                # Check characters
+                elif 'Characters' in scene:
+                    characters = {name.lower(): desc for name, desc in scene['Characters'].items()}
+                    if target in characters:
+                        print(f"{target.capitalize()}: {characters[target]}")
+                    else:
+                        print("No such item or character here.")
                 else:
                     print("No such item or character here.")
             elif command == 'look':
                 if 'Description' in scene:
-                    self.display_text(scene['Description'][0])
+                    for line in scene['Description']:
+                        self.display_text(line)
                 if 'Items' in scene:
                     for item in scene['Items']:
                         print(f"You see: {item}")
@@ -147,6 +158,22 @@ class Script2Game:
                     print("\nExits:")
                     for exit in scene['Exits']:
                         print(f"- {exit}")
+            elif command == 'inventory' or command == 'inv':
+                if self.inventory:
+                    print("Inventory:")
+                    for item in self.inventory:
+                        print(f"- {item}")
+                else:
+                    print("Your inventory is empty.")
+            elif command.startswith('use '):
+                item = command[4:].strip().lower()
+                inventory_items = [i.lower() for i in self.inventory]
+                if item in inventory_items:
+                    actual_item = next(i for i in self.inventory if i.lower() == item)
+                    print(f"You use {actual_item}.")
+                    # Add specific effects based on the item used
+                else:
+                    print("You don't have that item.")
             else:
                 print("Invalid command. Try again.")
 
