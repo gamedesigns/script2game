@@ -1,6 +1,7 @@
 import re
 import os
 import time
+import sys
 
 class DialogueNode:
     def __init__(self, text):
@@ -17,6 +18,7 @@ class Script2Game:
         self.variables = {}
         self.current_scene = None
         self.current_dialogue_node = None
+        self.item_combinations = {}
         self.load_markdown_files(markdown_files)
 
     def load_markdown_files(self, markdown_files):
@@ -46,6 +48,8 @@ class Script2Game:
                 parsed[header] = self.parse_characters(body)
             elif header == 'Items':
                 parsed[header] = self.parse_items(body)
+            elif header == 'Item Combinations':
+                self.parse_item_combinations(body)
             else:
                 parsed[header] = self.parse_section_content(body)
         return parsed
@@ -122,9 +126,22 @@ class Script2Game:
                 item_name = line.lstrip('- ').strip()
                 movable = '(X)' not in item_name
                 item_name = item_name.replace('(X)', '').strip()
-                current_item = {'name': item_name, 'contains': None, 'movable': movable, 'description': None, 'revealed': False}
+                description = None
+                if '##### Description:' in line:
+                    description = line.split('##### Description:')[1].strip()
+                current_item = {'name': item_name, 'contains': None, 'movable': movable, 'description': description, 'revealed': False}
                 items.append(current_item)
         return items
+
+    def parse_item_combinations(self, content):
+        lines = content.strip().split('\n')
+        for line in lines:
+            parts = line.split(' + ')
+            if len(parts) == 2:
+                item1, item2 = parts[0].strip(), parts[1].strip()
+                result_item = line.split(' = ')[1].strip()
+                self.item_combinations[(item1.lower(), item2.lower())] = result_item
+                print(f"Parsed combination: {item1.lower()} + {item2.lower()} = {result_item}")
 
     def parse_section_content(self, content):
         lines = content.strip().split('\n')
@@ -156,8 +173,12 @@ class Script2Game:
         self.display_scene_exits(scene)
 
         while True:
-            command = input("\nWhat do you want to do? ").strip().lower()
-            self.handle_command(command, scene)
+            try:
+                command = input("\nWhat do you want to do? ").strip().lower()
+                self.handle_command(command, scene)
+            except KeyboardInterrupt:
+                print("\nThank you for playing! Goodbye.")
+                sys.exit(0)
 
     def display_scene_description(self, scene):
         if 'Description' in scene['content']:
@@ -205,7 +226,7 @@ class Script2Game:
             self.handle_use_command(command)
         elif command.startswith('give '):
             self.handle_give_command(command, scene)
-        elif command.startswith('combine '):
+        elif command.startswith('combine ') or command.startswith('use '):
             self.handle_combine_command(command)
         elif command.startswith('drop '):
             self.handle_drop_command(command, scene)
@@ -313,8 +334,8 @@ class Script2Game:
             print("Inventory:")
             for item in self.inventory:
                 print(f"- {item['name']}")
-                if item['contains']:
-                    print(f"  (contains {item['contains']})")
+                if item['description']:
+                    print(f"  ({item['description']})")
         else:
             print("Your inventory is empty.")
 
@@ -345,20 +366,36 @@ class Script2Game:
             print("You don't have that item.")
 
     def handle_combine_command(self, command):
-        items = command[8:].strip().lower().split()
-        if len(items) == 2:
-            item1, item2 = items
+        if ' + ' in command or ' with ' in command:
+            if ' + ' in command:
+                items = command.split(' + ', 1)
+            else:
+                items = command.split(' with ', 1)
+            item1 = items[0][8:].strip().lower()
+            item2 = items[1].strip().lower()
             inventory_items = [i['name'].lower() for i in self.inventory]
+            print(f"Inventory items: {inventory_items}")
+            print(f"Combination keys: {self.item_combinations.keys()}")
             if item1 in inventory_items and item2 in inventory_items:
                 actual_item1 = next(i for i in self.inventory if i['name'].lower() == item1)
                 actual_item2 = next(i for i in self.inventory if i['name'].lower() == item2)
-                print(f"You combine {actual_item1['name']} and {actual_item2['name']}.")
-                # Add specific effects based on the items combined
-                if actual_item1['name'] == 'key' and actual_item2['name'] == 'lock':
-                    print("You create a new item: unlocked lock.")
+                print(f"Removing: {actual_item1}")
+                print(f"Removing: {actual_item2}")
+                print(f"Before removal: {self.inventory}")
+                try:
                     self.inventory.remove(actual_item1)
                     self.inventory.remove(actual_item2)
-                    self.inventory.append({'name': 'unlocked lock', 'contains': None, 'movable': True, 'description': None})
+                    if (item1, item2) in self.item_combinations or (item2, item1) in self.item_combinations:
+                        result_item_name = self.item_combinations.get((item1, item2), self.item_combinations.get((item2, item1)))
+                        result_item = {'name': result_item_name, 'contains': None, 'movable': True, 'description': None}
+                        self.inventory.append(result_item)
+                        print(f"You create a new item: {result_item_name}.")
+                    else:
+                        print("These items cannot be combined.")
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                print(f"After removal: {self.inventory}")
+                print(f"After append: {self.inventory}")
             else:
                 print("You don't have both items.")
         else:
@@ -398,6 +435,34 @@ class Script2Game:
                     print("Invalid choice. Please enter a number corresponding to one of the options or 'E' to exit.")
             else:
                 current_node = None
+
+    def get_item_or_character_by_last_word(self, name, items, characters):
+        last_word = name.split()[-1].lower()
+        matching_items = [item for item in items if item['name'].lower().endswith(last_word)]
+        matching_characters = [char for char in characters if char.lower().endswith(last_word)]
+
+        if len(matching_items) == 1 and len(matching_characters) == 0:
+            return matching_items[0]
+        elif len(matching_characters) == 1 and len(matching_items) == 0:
+            return matching_characters[0]
+        elif len(matching_items) + len(matching_characters) > 1:
+            print("Multiple matches found. Please choose the correct one:")
+            for i, item in enumerate(matching_items, 1):
+                print(f"{i}. {item['name']}")
+            for i, char in enumerate(matching_characters, len(matching_items) + 1):
+                print(f"{i}. {char}")
+            choice = input("Enter the number of your choice: ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(matching_items) + len(matching_characters):
+                choice_index = int(choice) - 1
+                if choice_index < len(matching_items):
+                    return matching_items[choice_index]
+                else:
+                    return matching_characters[choice_index - len(matching_items)]
+            else:
+                print("Invalid choice. Try again.")
+                return None
+        else:
+            return None
 
 if __name__ == "__main__":
     engine = Script2Game(['demo.md'])

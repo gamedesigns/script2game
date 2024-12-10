@@ -12,6 +12,10 @@ You find yourself in Sherlock Holmes' study, filled with books, papers, and myst
 - Library (X)
 #### Book
 ##### Description: “The Periodic Law of the Chemical Elements” by Dmitri Mendeleev, printed in 1871
+- Old Army Revolver
+##### Description: Dr. Watson's well-worn service revolver, still capable of firing, but its drum remains frustratingly empty.
+- Ammo
+##### Description: A box of .450 revolver ammo
 
 ### Characters
 
@@ -213,3 +217,8 @@ None in sight
 ### Dialogues
 
 None
+
+### Item Combinations
+
+Old Army Revolver + Ammo = Loaded Revolver
+##### Description: Dr. Watson's service revolver, now loaded with deadly .450 rounds.
