@@ -9,6 +9,9 @@ You find yourself in Sherlock Holmes' study, filled with books, papers, and myst
 - Pipe
 #### Tobacco
 - Magnifying Glass
+- Library (X)
+#### Book
+##### Description: “The Periodic Law of the Chemical Elements” by Dmitri Mendeleev, printed in 1871
 
 ### Characters
 

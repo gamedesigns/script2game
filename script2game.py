@@ -120,7 +120,9 @@ class Script2Game:
                     current_item = None
             else:
                 item_name = line.lstrip('- ').strip()
-                current_item = {'name': item_name, 'contains': None}
+                movable = '(X)' not in item_name
+                item_name = item_name.replace('(X)', '').strip()
+                current_item = {'name': item_name, 'contains': None, 'movable': movable, 'description': None, 'revealed': False}
                 items.append(current_item)
         return items
 
@@ -167,6 +169,8 @@ class Script2Game:
             print("You see:")
             for item in scene['content']['Items']:
                 print(f"  {item['name']}")
+                if item['revealed'] and item['contains']:
+                    print(f"    Inside, you see: {item['contains']}")
 
     def display_scene_characters(self, scene):
         if 'Characters' in scene['content']:
@@ -200,7 +204,7 @@ class Script2Game:
         elif command.startswith('use '):
             self.handle_use_command(command)
         elif command.startswith('give '):
-            self.handle_give_command(command)
+            self.handle_give_command(command, scene)
         elif command.startswith('combine '):
             self.handle_combine_command(command)
         elif command.startswith('drop '):
@@ -239,9 +243,12 @@ class Script2Game:
         print(f"Debug: Scene items: {scene_items}")  # Debugging output
         if item in scene_items:
             actual_item = next(i for i in scene['content']['Items'] if i['name'].lower() == item)
-            self.inventory.append(actual_item)
-            scene['content']['Items'].remove(actual_item)
-            print(f"You have picked up: {actual_item['name']}")
+            if actual_item['movable']:
+                self.inventory.append(actual_item)
+                scene['content']['Items'].remove(actual_item)
+                print(f"You have picked up: {actual_item['name']}")
+            else:
+                print("Not too handy to take along.")
         else:
             print("No such item here.")
 
@@ -255,11 +262,19 @@ class Script2Game:
             print(f"You see: {actual_item['name']}")
             if actual_item['contains']:
                 print(f"Inside, you see: {actual_item['contains']}")
+                # Reveal the nested item
+                nested_item = {'name': actual_item['contains'], 'contains': None, 'movable': True, 'description': actual_item.get('description', None), 'revealed': True}
+                scene['content']['Items'].append(nested_item)
+                actual_item['revealed'] = True
+            if actual_item['description']:
+                print(f"Description: {actual_item['description']}")
         elif target in inventory_items:
             actual_item = next(i for i in self.inventory if i['name'].lower() == target)
             print(f"You see: {actual_item['name']}")
             if actual_item['contains']:
                 print(f"Inside, you see: {actual_item['contains']}")
+            if actual_item['description']:
+                print(f"Description: {actual_item['description']}")
         elif 'Characters' in scene['content']:
             characters = {name.lower(): details for name, details in scene['content']['Characters'].items()}
             if target in characters:
@@ -280,8 +295,8 @@ class Script2Game:
             print("You see:")
             for item in scene['content']['Items']:
                 print(f"  {item['name']}")
-                if item['contains']:
-                    print(f"  Inside, you see: {item['contains']}")
+                if item['revealed'] and item['contains']:
+                    print(f"    Inside, you see: {item['contains']}")
         if 'Characters' in scene['content']:
             for character, details in scene['content']['Characters'].items():
                 print(f"{character} is in the room. {details['description']}")
@@ -316,13 +331,16 @@ class Script2Game:
         else:
             print("You don't have that item.")
 
-    def handle_give_command(self, command):
+    def handle_give_command(self, command, scene):
         item = command[5:].strip().lower()
         inventory_items = [i['name'].lower() for i in self.inventory]
         if item in inventory_items:
             actual_item = next(i for i in self.inventory if i['name'].lower() == item)
             print(f"You give {actual_item['name']}.")
             # Add specific effects based on the item given
+            if actual_item['name'] == 'book':
+                print("Sherlock Holmes: And that is exactly what I was looking for!")
+                self.inventory.remove(actual_item)
         else:
             print("You don't have that item.")
 
@@ -340,7 +358,7 @@ class Script2Game:
                     print("You create a new item: unlocked lock.")
                     self.inventory.remove(actual_item1)
                     self.inventory.remove(actual_item2)
-                    self.inventory.append({'name': 'unlocked lock', 'contains': None})
+                    self.inventory.append({'name': 'unlocked lock', 'contains': None, 'movable': True, 'description': None})
             else:
                 print("You don't have both items.")
         else:
