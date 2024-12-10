@@ -305,12 +305,12 @@ class Script2Game:
 
     def handle_use_command(self, command):
         item = command[4:].strip().lower()
-        inventory_items = [i.lower() for i in self.inventory]
+        inventory_items = [i['name'].lower() for i in self.inventory]
         if item in inventory_items:
-            actual_item = next(i for i in self.inventory if i.lower() == item)
-            print(f"You use {actual_item}.")
+            actual_item = next(i for i in self.inventory if i['name'].lower() == item)
+            print(f"You use {actual_item['name']}.")
             # Add specific effects based on the item used
-            if actual_item == 'key':
+            if actual_item['name'] == 'key':
                 print("You unlock the door with the key.")
                 # Add logic to handle the unlocked door
         else:
@@ -318,10 +318,10 @@ class Script2Game:
 
     def handle_give_command(self, command):
         item = command[5:].strip().lower()
-        inventory_items = [i.lower() for i in self.inventory]
+        inventory_items = [i['name'].lower() for i in self.inventory]
         if item in inventory_items:
-            actual_item = next(i for i in self.inventory if i.lower() == item)
-            print(f"You give {actual_item}.")
+            actual_item = next(i for i in self.inventory if i['name'].lower() == item)
+            print(f"You give {actual_item['name']}.")
             # Add specific effects based on the item given
         else:
             print("You don't have that item.")
@@ -330,17 +330,17 @@ class Script2Game:
         items = command[8:].strip().lower().split()
         if len(items) == 2:
             item1, item2 = items
-            inventory_items = [i.lower() for i in self.inventory]
+            inventory_items = [i['name'].lower() for i in self.inventory]
             if item1 in inventory_items and item2 in inventory_items:
-                actual_item1 = next(i for i in self.inventory if i.lower() == item1)
-                actual_item2 = next(i for i in self.inventory if i.lower() == item2)
-                print(f"You combine {actual_item1} and {actual_item2}.")
+                actual_item1 = next(i for i in self.inventory if i['name'].lower() == item1)
+                actual_item2 = next(i for i in self.inventory if i['name'].lower() == item2)
+                print(f"You combine {actual_item1['name']} and {actual_item2['name']}.")
                 # Add specific effects based on the items combined
-                if actual_item1 == 'key' and actual_item2 == 'lock':
+                if actual_item1['name'] == 'key' and actual_item2['name'] == 'lock':
                     print("You create a new item: unlocked lock.")
                     self.inventory.remove(actual_item1)
                     self.inventory.remove(actual_item2)
-                    self.inventory.append('unlocked lock')
+                    self.inventory.append({'name': 'unlocked lock', 'contains': None})
             else:
                 print("You don't have both items.")
         else:
@@ -348,12 +348,12 @@ class Script2Game:
 
     def handle_drop_command(self, command, scene):
         item = command[5:].strip().lower()
-        inventory_items = [i.lower() for i in self.inventory]
+        inventory_items = [i['name'].lower() for i in self.inventory]
         if item in inventory_items:
-            actual_item = next(i for i in self.inventory if i.lower() == item)
+            actual_item = next(i for i in self.inventory if i['name'].lower() == item)
             self.inventory.remove(actual_item)
             scene['content']['Items'].append(actual_item)
-            print(f"You drop {actual_item}.")
+            print(f"You drop {actual_item['name']}.")
         else:
             print("You don't have that item.")
 
