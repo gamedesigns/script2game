@@ -110,15 +110,19 @@ class Script2Game:
     def parse_items(self, content):
         items = []
         lines = content.strip().split('\n')
+        current_item = None
         for line in lines:
             if line.startswith('####'):
                 nested_item = line.lstrip('####').strip()
-                if items:
-                    items[-1] = f"{items[-1]} (contains {nested_item})"
+                if current_item:
+                    current_item['contains'] = nested_item
+                    items[-1] = current_item
+                    current_item = None
             else:
-                items.append(line.lstrip('- ').strip())
+                item_name = line.lstrip('- ').strip()
+                current_item = {'name': item_name, 'contains': None}
+                items.append(current_item)
         return items
-
 
     def parse_section_content(self, content):
         lines = content.strip().split('\n')
@@ -160,8 +164,9 @@ class Script2Game:
 
     def display_scene_items(self, scene):
         if 'Items' in scene['content']:
+            print("You see:")
             for item in scene['content']['Items']:
-                print(f"You see: {item}")
+                print(f"  {item['name']}")
 
     def display_scene_characters(self, scene):
         if 'Characters' in scene['content']:
@@ -230,27 +235,31 @@ class Script2Game:
 
     def handle_take_command(self, command, scene):
         item = command[5:].strip().lower()
-        scene_items = [i.lower() for i in scene['content'].get('Items', [])]
+        scene_items = [i['name'].lower() for i in scene['content'].get('Items', [])]
         print(f"Debug: Scene items: {scene_items}")  # Debugging output
         if item in scene_items:
-            actual_item = next(i for i in scene['content']['Items'] if i.lower() == item)
+            actual_item = next(i for i in scene['content']['Items'] if i['name'].lower() == item)
             self.inventory.append(actual_item)
             scene['content']['Items'].remove(actual_item)
-            print(f"You have picked up: {actual_item}")
+            print(f"You have picked up: {actual_item['name']}")
         else:
             print("No such item here.")
 
-
-
     def handle_look_at_command(self, command, scene):
         target = command[8:].strip().lower()
-        scene_items = [i.lower() for i in scene['content'].get('Items', [])]
+        scene_items = [i['name'].lower() for i in scene['content'].get('Items', [])]
+        inventory_items = [i['name'].lower() for i in self.inventory]
+
         if target in scene_items:
-            actual_item = next(i for i in scene['content']['Items'] if i.lower() == target)
-            print(f"You see: {actual_item}")
-            if 'contains' in actual_item:
-                nested_item = actual_item.split('(contains ')[1].split(')')[0]
-                print(f"Inside, you see: {nested_item}")
+            actual_item = next(i for i in scene['content']['Items'] if i['name'].lower() == target)
+            print(f"You see: {actual_item['name']}")
+            if actual_item['contains']:
+                print(f"Inside, you see: {actual_item['contains']}")
+        elif target in inventory_items:
+            actual_item = next(i for i in self.inventory if i['name'].lower() == target)
+            print(f"You see: {actual_item['name']}")
+            if actual_item['contains']:
+                print(f"Inside, you see: {actual_item['contains']}")
         elif 'Characters' in scene['content']:
             characters = {name.lower(): details for name, details in scene['content']['Characters'].items()}
             if target in characters:
@@ -268,11 +277,11 @@ class Script2Game:
             for line in scene['content']['Description']:
                 self.display_text(line)
         if 'Items' in scene['content']:
+            print("You see:")
             for item in scene['content']['Items']:
-                print(f"You see: {item}")
-                if 'contains' in item:
-                    nested_item = item.split('(contains ')[1].split(')')[0]
-                    print(f"Inside, you see: {nested_item}")
+                print(f"  {item['name']}")
+                if item['contains']:
+                    print(f"  Inside, you see: {item['contains']}")
         if 'Characters' in scene['content']:
             for character, details in scene['content']['Characters'].items():
                 print(f"{character} is in the room. {details['description']}")
@@ -288,7 +297,9 @@ class Script2Game:
         if self.inventory:
             print("Inventory:")
             for item in self.inventory:
-                print(f"- {item}")
+                print(f"- {item['name']}")
+                if item['contains']:
+                    print(f"  (contains {item['contains']})")
         else:
             print("Your inventory is empty.")
 
