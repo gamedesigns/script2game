@@ -116,8 +116,9 @@ class Script2Game:
                 if items:
                     items[-1] = f"{items[-1]} (contains {nested_item})"
             else:
-                items.append(line.strip())
+                items.append(line.lstrip('- ').strip())
         return items
+
 
     def parse_section_content(self, content):
         lines = content.strip().split('\n')
@@ -230,6 +231,7 @@ class Script2Game:
     def handle_take_command(self, command, scene):
         item = command[5:].strip().lower()
         scene_items = [i.lower() for i in scene['content'].get('Items', [])]
+        print(f"Debug: Scene items: {scene_items}")  # Debugging output
         if item in scene_items:
             actual_item = next(i for i in scene['content']['Items'] if i.lower() == item)
             self.inventory.append(actual_item)
@@ -237,6 +239,8 @@ class Script2Game:
             print(f"You have picked up: {actual_item}")
         else:
             print("No such item here.")
+
+
 
     def handle_look_at_command(self, command, scene):
         target = command[8:].strip().lower()
