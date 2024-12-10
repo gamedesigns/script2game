@@ -138,10 +138,12 @@ class Script2Game:
         for line in lines:
             parts = line.split(' + ')
             if len(parts) == 2:
-                item1, item2 = parts[0].strip(), parts[1].strip()
+                item1, item2 = parts[0].strip().lower(), parts[1].strip().lower()
                 result_item = line.split(' = ')[1].strip()
-                self.item_combinations[(item1.lower(), item2.lower())] = result_item
-                print(f"Parsed combination: {item1.lower()} + {item2.lower()} = {result_item}")
+                # Sort the items to make the combination order-independent
+                combination_key = tuple(sorted([item1, item2]))
+                self.item_combinations[combination_key] = result_item
+                print(f"Parsed combination: {combination_key} = {result_item}")
 
     def parse_section_content(self, content):
         lines = content.strip().split('\n')
@@ -385,13 +387,13 @@ class Script2Game:
                 try:
                     self.inventory.remove(actual_item1)
                     self.inventory.remove(actual_item2)
-                    if (item1, item2) in self.item_combinations or (item2, item1) in self.item_combinations:
-                        result_item_name = self.item_combinations.get((item1, item2), self.item_combinations.get((item2, item1)))
-                        result_item = {'name': result_item_name, 'contains': None, 'movable': True, 'description': None}
-                        self.inventory.append(result_item)
-                        print(f"You create a new item: {result_item_name}.")
-                    else:
-                        print("These items cannot be combined.")
+                    combination_key = tuple(sorted([item1, item2]))
+                    result_item_name = self.item_combinations[combination_key]
+                    result_item = {'name': result_item_name, 'contains': None, 'movable': True, 'description': None}
+                    self.inventory.append(result_item)
+                    print(f"You create a new item: {result_item_name}.")
+                except KeyError:
+                    print("These items cannot be combined.")
                 except Exception as e:
                     print(f"An error occurred: {e}")
                 print(f"After removal: {self.inventory}")
