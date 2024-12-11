@@ -35,7 +35,7 @@ Dr. Watson: What is it this time, Holmes?
 Sherlock Holmes: Ah, you've finally arrived. I've been expecting you. There's a case that requires your attention.
 
 Sherlock Holmes: A series of burglaries in the city. Nothing seems to be taken, but there are strange symbols left at each scene.
-(Hint) If you ask him about an experiment, he will leave to the laboratory.
+(Hint) If you ask him about an experiment, he will leave to the Laboratory.
 
 1. Ask him about the experiment.
     Sherlock Holmes: I need to test an interesting chemical reaction for my forensic experiment. Thank you for reminding me! (Leaves to the Laboratory).
@@ -50,6 +50,14 @@ Sherlock Holmes: A series of burglaries in the city. Nothing seems to be taken, 
         Dr. Watson: Maybe we should take a closer look there, Holmes?
     2. What was stolen?
         Sherlock Holmes: This is the strange part. Apparently nothing.
+        
+### Item Combinations
+
+- Loaded Revolver = (Old Army Revolver + Ammo)
+##### Description: Dr. Watson's service revolver, now loaded with deadly .450 rounds.
+
+- Well Loaded Pipe = (Pipe + Tobacco)
+##### Description: A pipe filled with tobacco, ready to smoke.
 
 ## Scene: Laboratory
 
@@ -218,7 +226,11 @@ None in sight
 
 None
 
+## Global Item Combinations
+
 ### Item Combinations
 
-Old Army Revolver + Ammo = Loaded Revolver
+- Loaded Revolver = (Old Army Revolver + Ammo)
 ##### Description: Dr. Watson's service revolver, now loaded with deadly .450 rounds.
+- Well Loaded Pipe = (Pipe + Tobacco)
+##### Description: A pipe filled with tobacco, ready to smoke.
